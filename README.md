@@ -15,7 +15,7 @@ This was built and tested for Microbot. It is not intended for other clients or 
 
 ## Installation
 
-1. Download [`CCPKeybindDisplay-0.3.0.zip`](https://github.com/theShirina/ccp-keybind-display/releases/download/v0.3.0/CCPKeybindDisplay-0.3.0.zip).
+1. Download [`CCPKeybindDisplay-0.3.1.zip`](https://github.com/theShirina/ccp-keybind-display/releases/download/v0.3.1/CCPKeybindDisplay-0.3.1.zip).
 2. Close World of Warcraft.
 3. Extract the ZIP into your WoW `Interface\AddOns` folder.
 4. Check that this path exists:
@@ -36,13 +36,13 @@ Close WoW and replace the existing `Interface\AddOns\CCPKeybindDisplay` folder w
 
 Type `/ckd` or click the minimap key icon to open settings.
 
-The overlay shows one compact command column beside one keybind column. Its width follows the current text and font size. **Preferred width** limits ordinary layouts, but the card can grow when a long key value would otherwise be cut off. The scale setting controls the final on-screen size.
+The overlay shows one compact command column beside one keybind column. Its width follows the current text and font size, while the scale setting controls the final on-screen size.
 
 Settings include:
 
-- role and per-command visibility;
+- role filters for the settings list and per-command HUD visibility;
 - persistent **Show all assigned** mode;
-- opacity, scale, font size, preferred width, and row spacing;
+- opacity, scale, font size, and row spacing;
 - background, lock, display, and minimap-button controls;
 - an assigned-only settings filter;
 - a built-in keybind manager with conflict confirmation.

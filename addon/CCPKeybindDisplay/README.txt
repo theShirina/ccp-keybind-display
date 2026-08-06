@@ -1,8 +1,11 @@
-CCP Keybind Display 0.3.0
+CCP Keybind Display 0.3.1
 
 Requirements
-- World of Warcraft 1.12.1 (Interface 11200)
-- Companion Control Panel (CCP) installed and enabled
+- Microbot's World of Warcraft 1.12.1 client (Interface 11200)
+- Microbot's Companion Control Panel (CCP) installed and enabled
+
+Compatibility
+This addon is made and tested for Microbot. Other clients and private servers are not supported.
 
 Installation
 1. Close World of Warcraft.
@@ -16,4 +19,5 @@ Use
 - Type /ckd reset to restore the addon's defaults.
 
 The Manage keybinds window saves accepted changes to the active WoW binding set.
+The role buttons filter the settings list; individual checkboxes control the HUD.
 The addon does not modify CCP files and does not use the network.

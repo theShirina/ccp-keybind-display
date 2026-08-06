@@ -48,7 +48,8 @@ local function NewWidget(kind, name)
     function widget:SetAlpha(value) self.alpha = value end
     function widget:SetScale(value) self.scale = value end
     function widget:SetChecked(value) self.checked = value and true or false end
-    function widget:GetChecked() return self.checked end
+    -- Vanilla check buttons return 1 or nil rather than strict booleans.
+    function widget:GetChecked() if self.checked then return 1 end return nil end
     function widget:SetMinMaxValues(low, high) self.low = low; self.high = high end
     function widget:SetValueStep(value) self.valueStep = value end
     function widget:SetValue(value)
@@ -252,11 +253,9 @@ assertEqual(CCPKeybindDisplay.rows[2].label.width <= 220, true, "command column 
 assertEqual(CCPKeybindDisplay.rows[2].label.height, 12, "long labels are clipped to one row instead of overlapping")
 assertEqual(CCPKeybindDisplay.rows[2].keys.points[1][4], CCPKeybindDisplay.rows[2].label.points[1][4] + CCPKeybindDisplay.rows[2].label.width + 16, "long command key follows the command column")
 assertEqual(CCPKeybindDisplay.rows[2].keys.points[1][4] + CCPKeybindDisplay.rows[2].keys.width <= CCPKeybindDisplay.overlay.width - 6, true, "long command key stays inside the auto-fitted card")
-CCPKeybindDisplay:SetVisualOption("width", 800)
 CCPKeybindDisplay:SetVisualOption("fontSize", 24)
 assertEqual(CCPKeybindDisplay.rows[2].label.width > 220, true, "command width cap grows with the selected font size")
-assertEqual(CCPKeybindDisplay.rows[2].label:GetStringWidth() <= CCPKeybindDisplay.rows[2].label.width, true, "large-font command stays complete when preferred width has room")
-CCPKeybindDisplay:SetVisualOption("width", 360)
+assertEqual(CCPKeybindDisplay.rows[2].label:GetStringWidth() <= CCPKeybindDisplay.rows[2].label.width, true, "large-font command stays complete")
 CCPKeybindDisplay:SetVisualOption("fontSize", 10)
 setglobal("BINDING_NAME_CCP_START", "Start")
 CCPKeybindDisplay:Refresh()
@@ -268,11 +267,8 @@ bindings[2][2] = "CTRL-SHIFT-PAGEDOWN"
 bindings[2][3] = "ALT-CTRL-SHIFT-PAGEUP"
 CCPKeybindDisplay:Refresh()
 CCPKeybindDisplay:SetEntryOverride("CCP_START_TANK", true)
-local geometryWidth, geometryFont, geometryRow
-local geometryWidths = { 320, 360, 800 }
-for geometryWidth = 1, table.getn(geometryWidths) do
-    CCPKeybindDisplay:SetVisualOption("width", geometryWidths[geometryWidth])
-    for geometryFont = 8, 24 do
+local geometryFont, geometryRow
+for geometryFont = 8, 24 do
         CCPKeybindDisplay:SetVisualOption("fontSize", geometryFont)
         local geometryCount = table.getn(CCPKeybindDisplay:GetVisibleEntries())
         local rowsPerColumn = geometryCount
@@ -289,15 +285,13 @@ for geometryWidth = 1, table.getn(geometryWidths) do
             assertEqual(geometryKeys.points[1][4], geometryLabel.points[1][4] + geometryLabel.width + 16, "aligned key text keeps the table gap")
             assertEqual(geometryKeys.points[1][4] + geometryKeys.width <= ((geometryColumn + 1) * actualColumnWidth) - 6, true, "aligned key cell stays inside its column")
         end
-        if geometryWidths[geometryWidth] == 320 and geometryFont == 24 then
-            assertEqual(CCPKeybindDisplay.overlay.width > 320, true, "preferred width yields to preserve an unusually long key value")
+        if geometryFont == 24 then
+            assertEqual(CCPKeybindDisplay.overlay.width > 320, true, "auto-fit expands for unusually long key values")
         end
-    end
 end
 bindings[2][2] = "F1"
 bindings[2][3] = "ALT-F1"
 CCPKeybindDisplay:ClearEntryOverride("CCP_START_TANK")
-CCPKeybindDisplay:SetVisualOption("width", 360)
 CCPKeybindDisplay:SetVisualOption("fontSize", 10)
 assertEqual(CCPKeybindDisplay.minimapButton.shown, true, "minimap button shown by default")
 assertEqual(CCPKeybindDisplay.minimapButton.width, 32, "minimap button compact size")
@@ -315,7 +309,6 @@ CCPKeybindDisplay:SetLocked(false)
 assertEqual(CCPKeybindDisplay.overlay.mouseEnabled, true, "unlocked overlay accepts mouse")
 
 CCPKeybindDisplay:SetVisualOption("alpha", 0.5)
-CCPKeybindDisplay:SetVisualOption("width", 800)
 CCPKeybindDisplay:SetVisualOption("fontSize", 10)
 local compactAutoWidth = CCPKeybindDisplay.overlay.width
 CCPKeybindDisplay:SetVisualOption("scale", 1)
@@ -325,7 +318,6 @@ CCPKeybindDisplay:SetVisualOption("scale", 1.25)
 assertEqual(CCPKeybindDisplay.overlay.alpha, 0.5, "alpha applies immediately")
 assertEqual(CCPKeybindDisplay.overlay.scale, 1.25, "scale applies immediately")
 assertEqual(CCPKeybindDisplay.overlay.width > compactAutoWidth, true, "card grows when larger text needs more room")
-assertEqual(CCPKeybindDisplay.overlay.width < 800, true, "preferred width no longer forces a large empty card")
 assertEqual(CCPKeybindDisplay.overlay.width, largeFontLogicalWidth, "scale does not double-apply to logical card width")
 assertEqual(CCPKeybindDisplay.overlay.width * CCPKeybindDisplay.overlay.scale, largeFontLogicalWidth * 1.25, "scale controls the final on-screen card width exactly once")
 assertEqual(CCPKeybindDisplay.rows[1].label.font[2], 24, "font size applies immediately")
@@ -347,7 +339,8 @@ print("UI_VISUAL_SETTINGS=PASS")
 
 assertEqual(CCPKeybindDisplay:SetVisualOption("columns", 2), false, "duplicate command-key pairs are rejected")
 assertEqual(CCPKeybindDisplay.db.visual.columns, 1, "HUD remains one vertical command-key table")
-assertEqual(CCPKeybindDisplay:SetVisualOption("width", 320), true, "compact command-key minimum width accepted")
+assertEqual(CCPKeybindDisplay:SetVisualOption("width", 400), false, "removed preferred-width option is rejected")
+assertEqual(CCPKeybindDisplay.db.visual.width, nil, "removed preferred width is not persisted")
 assertEqual(CCPKeybindDisplay:SetVisualOption("rowSpacing", 6), true, "row-spacing option accepted")
 assertEqual(CCPKeybindDisplay:SetVisualOption("background", false), true, "background option accepted")
 assertEqual(CCPKeybindDisplay.rows[3].label.points[1][4], CCPKeybindDisplay.rows[1].label.points[1][4], "all commands stay in one left column")
@@ -355,8 +348,6 @@ assertEqual(CCPKeybindDisplay.rows[3].label.points[1][5] < CCPKeybindDisplay.row
 assertEqual(CCPKeybindDisplay.rows[1].label.width, CCPKeybindDisplay.rows[2].label.width, "commands use one small aligned column")
 assertEqual(CCPKeybindDisplay.rows[1].keys.width, CCPKeybindDisplay.rows[2].keys.width, "keybinds use one aligned column")
 assertEqual(CCPKeybindDisplay.overlay.backdropColor[4], 0, "background can be hidden")
-assertEqual(CCPKeybindDisplay:SetVisualOption("width", 319), false, "width below the compact minimum is rejected")
-assertEqual(CCPKeybindDisplay.db.visual.width, 320, "rejected width preserves the card layout")
 assertEqual(CCPKeybindDisplay.db.visual.columns, 1, "rejected width preserves the command-key table")
 
 print("UI_LAYOUT_OPTIONS=PASS")
@@ -374,21 +365,44 @@ CCPKeybindDisplay:ToggleOptions()
 assertEqual(CCPKeybindDisplay.options.shown, true, "options can be opened")
 assertEqual(CCPKeybindDisplay.options.width, 790, "polished settings width")
 assertEqual(CCPKeybindDisplay.options.height, 680, "polished settings height")
-assertEqual(CCPKeybindDisplay.versionLabel.text, "v0.3.0", "release version shown")
+assertEqual(CCPKeybindDisplay.versionLabel.text, "v0.3.1", "release version shown")
 assertEqual(CCPKeybindDisplay.creditLabel.text, "Shirina", "Shirina credit shown")
 assertEqual(math.abs(CCPKeybindDisplay.displayPanel.points[1][5]) + CCPKeybindDisplay.displayPanel.height <= 594, true, "display card stays above its footer gap")
 assertEqual(math.abs(CCPKeybindDisplay.sliders.rowSpacing.points[1][5]) + CCPKeybindDisplay.sliders.rowSpacing.height <= 594, true, "row-spacing slider stays inside the display card")
+assertEqual(CCPKeybindDisplay.sliders.width, nil, "preferred-width slider is removed")
 assertEqual(math.abs(CCPKeybindDisplay.footerPanel.points[1][5]) + CCPKeybindDisplay.footerPanel.height <= CCPKeybindDisplay.options.height, true, "settings footer stays inside the frame")
 assertEqual(math.abs(CCPKeybindDisplay.creditLabel.points[1][5]) + 9 <= CCPKeybindDisplay.options.height, true, "Shirina credit stays inside the frame")
 assertEqual(CCPKeybindDisplay.displayPanel.shown, true, "settings display section card")
 assertEqual(CCPKeybindDisplay.entriesPanel.shown, true, "settings bindings section card")
-assertEqual(CCPKeybindDisplay.categoryChecks.general:GetChecked(), true, "general category default checked")
-assertEqual(CCPKeybindDisplay.categoryChecks.tank:GetChecked(), false, "tank category default unchecked")
-assertEqual(CCPKeybindDisplay.showUnassignedCheck:GetChecked(), false, "assigned-only default reflected")
+assertEqual(CCPKeybindDisplay.optionsCategoryFilter, "all", "settings list starts with all categories")
+assertEqual(CCPKeybindDisplay.showUnassignedCheck:GetChecked(), nil, "assigned-only default reflected")
 assertEqual(table.getn(CCPKeybindDisplay.bindingRows), 14, "settings allocates one complete binding page")
 assertEqual(CCPKeybindDisplay.bindingRows[5].check.shown, false, "unused initial rows stay hidden")
 assertEqual(CCPKeybindDisplay.bindingRows[1].label:GetText(), "Show/Hide CCP", "binding row uses CCP label")
 assertEqual(sliderSetCalls <= 12, true, "slider refresh is bounded")
+
+local originalTankDefault = CCPKeybindDisplay.db.categories.tank
+this = CCPKeybindDisplay.categoryFilterButtons.tank
+CCPKeybindDisplay.categoryFilterButtons.tank:GetScript("OnClick")()
+assertEqual(CCPKeybindDisplay.optionsCategoryFilter, "tank", "category control filters the settings list")
+assertEqual(table.getn(CCPKeybindDisplay.optionsEntries), 1, "tank category displays only tank bindings")
+assertEqual(CCPKeybindDisplay.optionsEntries[1].action, "CCP_START_TANK", "tank filter shows the tank action")
+assertEqual(CCPKeybindDisplay.db.categories.tank, originalTankDefault, "category filter does not select HUD bindings")
+this = CCPKeybindDisplay.categoryFilterButtons.all
+CCPKeybindDisplay.categoryFilterButtons.all:GetScript("OnClick")()
+assertEqual(CCPKeybindDisplay.optionsCategoryFilter, "all", "all category restores the full settings list")
+
+click(CCPKeybindDisplay.backgroundCheck, false)
+assertEqual(CCPKeybindDisplay.db.visual.background, false, "Vanilla nil checkbox value hides the card background")
+assertEqual(CCPKeybindDisplay.overlay.backdropColor[4], 0, "background checkbox hides the backdrop immediately")
+click(CCPKeybindDisplay.backgroundCheck, true)
+assertEqual(CCPKeybindDisplay.db.visual.background, true, "Vanilla numeric checkbox value restores the card background")
+click(CCPKeybindDisplay.visibleCheck, false)
+assertEqual(CCPKeybindDisplay.db.visual.visible, false, "Vanilla nil checkbox value hides the HUD")
+assertEqual(CCPKeybindDisplay.overlay.shown, false, "HUD checkbox hides the overlay immediately")
+click(CCPKeybindDisplay.visibleCheck, true)
+assertEqual(CCPKeybindDisplay.db.visual.visible, true, "Vanilla numeric checkbox value restores the HUD")
+assertEqual(CCPKeybindDisplay.overlay.shown, true, "HUD checkbox restores the overlay immediately")
 
 setglobal("BINDING_NAME_CCP_UNUSED", "Unused command")
 table.insert(bindings, { "CCP_UNUSED", nil, nil })
@@ -405,9 +419,15 @@ click(CCPKeybindDisplay.showAllAssignedCheck, true)
 assertEqual(CCPKeybindDisplay.db.showAllAssigned, true, "show-all assigned mode toggles on")
 assertEqual(CCPKeybindDisplay:IsEntryEnabled(CCPKeybindDisplay.entries[4]), true, "show-all mode includes assigned role bindings")
 assertEqual(CCPKeybindDisplay.db.overrides.CCP_UNUSED, nil, "show-all mode leaves unassigned overrides unchanged")
+click(CCPKeybindDisplay.bindingRows[2].check, false)
+assertEqual(CCPKeybindDisplay.db.showAllAssigned, false, "hiding one binding leaves show-all mode")
+assertEqual(CCPKeybindDisplay.db.overrides.CCP_START, false, "individual binding can be hidden after show-all mode")
+assertEqual(CCPKeybindDisplay:IsEntryEnabled(CCPKeybindDisplay.entries[2]), false, "individual exclusion takes effect immediately")
+CCPKeybindDisplay:ClearEntryOverride("CCP_START")
+click(CCPKeybindDisplay.showAllAssignedCheck, true)
 CCPKeybindDisplay:Refresh()
 assertEqual(CCPKeybindDisplay.db.showAllAssigned, true, "show-all mode survives a full addon refresh")
-assertEqual(CCPKeybindDisplay.showAllAssignedCheck:GetChecked(), true, "show-all persisted state is reflected in settings")
+assertEqual(CCPKeybindDisplay.showAllAssignedCheck:GetChecked(), 1, "show-all persisted state is reflected in settings")
 SetBinding("SHIFT-F1")
 CCPKeybindDisplay:Refresh()
 assertEqual(table.getn(CCPKeybindDisplay:GetVisibleEntries()), 3, "show-all mode drops a binding that becomes unassigned")
@@ -534,18 +554,6 @@ assertEqual(CCPKeybindDisplay.minimapButton.shown, false, "minimap button can be
 CCPKeybindDisplay:SetMinimapVisible(true)
 assertEqual(CCPKeybindDisplay.minimapButton.shown, true, "minimap button can be restored")
 
-this = CCPKeybindDisplay.sliders.width
-arg1 = 400
-CCPKeybindDisplay.sliders.width:GetScript("OnValueChanged")()
-assertEqual(CCPKeybindDisplay.db.visual.width, 400, "width slider uses Vanilla this and arg1")
-assertEqual(CCPKeybindDisplay.db.visual.columns, 1, "settings keep one command-key table")
-CCPKeybindDisplay.sliders.width.value = 310
-this = CCPKeybindDisplay.sliders.width
-arg1 = 310
-CCPKeybindDisplay.sliders.width:GetScript("OnValueChanged")()
-assertEqual(CCPKeybindDisplay.db.visual.width, 400, "invalid card width is rejected")
-assertEqual(CCPKeybindDisplay.sliders.width:GetValue(), 400, "rejected width slider snaps back")
-
 click(CCPKeybindDisplay.bindingRows[2].check, false)
 assertEqual(CCPKeybindDisplay.db.overrides.CCP_START, false, "individual general binding hide persists")
 click(CCPKeybindDisplay.bindingRows[4].check, true)
@@ -553,8 +561,8 @@ assertEqual(CCPKeybindDisplay.db.overrides.CCP_START_TANK, true, "individual rol
 
 CCPKeybindDisplay:ResetOverrides()
 assertEqual(next(CCPKeybindDisplay.db.overrides), nil, "individual overrides reset")
-assertEqual(CCPKeybindDisplay.bindingRows[2].check:GetChecked(), true, "reset restores general category default")
-assertEqual(CCPKeybindDisplay.bindingRows[4].check:GetChecked(), false, "reset restores tank category default")
+assertEqual(CCPKeybindDisplay.bindingRows[2].check:GetChecked(), 1, "reset restores general category default")
+assertEqual(CCPKeybindDisplay.bindingRows[4].check:GetChecked(), nil, "reset restores tank category default")
 
 SlashCmdList.CCPKEYBINDDISPLAY("lock")
 assertEqual(CCPKeybindDisplay.db.visual.locked, true, "slash lock command")

@@ -96,12 +96,6 @@ function Addon:RefreshOptionsValues()
     if not self.options then return end
     if self.optionsRefreshing then return end
     self.optionsRefreshing = true
-    local index, row, check
-    for index = 1, table.getn(CATEGORY_ORDER) do
-        row = CATEGORY_ORDER[index]
-        check = self.categoryChecks[row[1]]
-        check:SetChecked(self.db.categories[row[1]])
-    end
     self.showUnassignedCheck:SetChecked(self.db.showUnassigned)
     self.showAllAssignedCheck:SetChecked(self.db.showAllAssigned)
     self.visibleCheck:SetChecked(self.db.visual.visible)
@@ -111,7 +105,6 @@ function Addon:RefreshOptionsValues()
     self.sliders.alpha:SetValue(self.db.visual.alpha)
     self.sliders.scale:SetValue(self.db.visual.scale)
     self.sliders.fontSize:SetValue(self.db.visual.fontSize)
-    self.sliders.width:SetValue(self.db.visual.width)
     self.sliders.rowSpacing:SetValue(self.db.visual.rowSpacing)
     self.optionsRefreshing = false
 end
@@ -122,7 +115,8 @@ function Addon:UpdateBindingPage()
     local sourceIndex, sourceEntry
     for sourceIndex = 1, table.getn(self.entries or {}) do
         sourceEntry = self.entries[sourceIndex]
-        if not self.db.optionsAssignedOnly or sourceEntry.key1 or sourceEntry.key2 then
+        if (not self.optionsCategoryFilter or self.optionsCategoryFilter == "all" or sourceEntry.category == self.optionsCategoryFilter) and
+           (not self.db.optionsAssignedOnly or sourceEntry.key1 or sourceEntry.key2) then
             table.insert(optionsEntries, sourceEntry)
         end
     end
@@ -159,6 +153,24 @@ function Addon:UpdateBindingPage()
     self.pageLabel:SetText("Page " .. self.optionsPage .. " / " .. maxPage)
     if self.optionsPage > 1 then self.prevButton:Enable() else self.prevButton:Disable() end
     if self.optionsPage < maxPage then self.nextButton:Enable() else self.nextButton:Disable() end
+end
+
+function Addon:SetOptionsCategoryFilter(category)
+    local valid = category == "all"
+    local index, label
+    for index = 1, table.getn(CATEGORY_ORDER) do
+        if CATEGORY_ORDER[index][1] == category then
+            valid = true
+            label = CATEGORY_ORDER[index][2]
+        end
+    end
+    if not valid then category = "all" end
+    self.optionsCategoryFilter = category
+    self.optionsPage = 1
+    self:UpdateBindingPage()
+    if self.optionsFilterLabel then
+        self.optionsFilterLabel:SetText("Showing: " .. (label or "All"))
+    end
 end
 
 function Addon:ToggleAssignedOnlyList()
@@ -380,60 +392,62 @@ function Addon:CreateOptions()
     title:SetTextColor(0.45, 0.82, 1)
     local subtitle = CreateLabel(frame, "Companion controls, clearly organized.", 27, -44, 400, 11)
     subtitle:SetTextColor(0.68, 0.72, 0.8)
-    local version = CreateLabel(frame, "v0.3.0", 690, -24, 70, 10)
+    local version = CreateLabel(frame, "v0.3.1", 690, -24, 70, 10)
     self.versionLabel = version
     version:SetJustifyH("RIGHT")
     version:SetTextColor(0.55, 0.72, 0.88)
 
-    local categoriesTitle = CreateLabel(frame, "DEFAULT CATEGORIES", 34, -90, 220, 11)
+    local categoriesTitle = CreateLabel(frame, "FILTER BINDINGS", 34, -90, 220, 11)
     categoriesTitle:SetTextColor(1, 0.82, 0)
-    self.categoryChecks = {}
+    self.optionsCategoryFilter = "all"
+    self.categoryFilterButtons = {}
+    local categoryFilters = { { "all", "All" } }
     local index, category
-    for index = 1, table.getn(CATEGORY_ORDER) do
-        category = CATEGORY_ORDER[index]
-        local check = CreateCheck(frame, "CCPKeybindDisplayCategory" .. index, category[2], 34, -106 - ((index - 1) * 27))
-        check._ckdCategory = category[1]
-        check:SetScript("OnClick", function()
-            Addon:SetCategory(this._ckdCategory, this:GetChecked())
-            Addon:UpdateDisplay()
-            Addon:RefreshOptions()
-        end)
-        self.categoryChecks[category[1]] = check
+    for index = 1, table.getn(CATEGORY_ORDER) do table.insert(categoryFilters, CATEGORY_ORDER[index]) end
+    for index = 1, table.getn(categoryFilters) do
+        category = categoryFilters[index]
+        local filterX = 34 + (math.mod(index - 1, 2) * 160)
+        local filterY = -108 - (math.floor((index - 1) / 2) * 30)
+        local button = CreateButton(frame, "CCPKeybindDisplayCategoryFilter" .. index, category[2], filterX, filterY, 150)
+        button._ckdCategoryFilter = category[1]
+        button:SetScript("OnClick", function() Addon:SetOptionsCategoryFilter(this._ckdCategoryFilter) end)
+        self.categoryFilterButtons[category[1]] = button
     end
+    self.optionsFilterLabel = CreateLabel(frame, "Showing: All", 34, -230, 310, 10)
+    self.optionsFilterLabel:SetTextColor(0.62, 0.72, 0.84)
 
-    local displayTitle = CreateLabel(frame, "HUD BEHAVIOR", 34, -310, 220, 11)
+    local displayTitle = CreateLabel(frame, "HUD BEHAVIOR", 34, -256, 220, 11)
     displayTitle:SetTextColor(1, 0.82, 0)
-    self.showUnassignedCheck = CreateCheck(frame, "CCPKeybindDisplayShowUnassigned", "Include unassigned", 34, -326)
+    self.showUnassignedCheck = CreateCheck(frame, "CCPKeybindDisplayShowUnassigned", "Include unassigned", 34, -272)
     self.showUnassignedCheck:SetScript("OnClick", function()
-        Addon:SetShowUnassigned(this:GetChecked())
+        Addon:SetShowUnassigned(this:GetChecked() and true or false)
         Addon:UpdateDisplay()
         Addon:RefreshOptions()
     end)
-    self.showAllAssignedCheck = CreateCheck(frame, "CCPKeybindDisplayShowAllAssigned", "Show all assigned", 190, -326)
+    self.showAllAssignedCheck = CreateCheck(frame, "CCPKeybindDisplayShowAllAssigned", "Show all assigned", 190, -272)
     self.showAllAssignedCheck.label:SetWidth(145)
     self.showAllAssignedCheck:SetScript("OnClick", function() Addon:ShowAllAssignedBindings() end)
-    self.visibleCheck = CreateCheck(frame, "CCPKeybindDisplayVisible", "HUD visible", 34, -354)
-    self.visibleCheck:SetScript("OnClick", function() Addon:SetVisible(this:GetChecked()) end)
-    self.lockedCheck = CreateCheck(frame, "CCPKeybindDisplayLocked", "Lock HUD", 190, -354)
-    self.lockedCheck:SetScript("OnClick", function() Addon:SetLocked(this:GetChecked()) end)
-    self.backgroundCheck = CreateCheck(frame, "CCPKeybindDisplayBackground", "Card background", 34, -382)
-    self.backgroundCheck:SetScript("OnClick", function() Addon:SetVisualOption("background", this:GetChecked()) end)
-    self.minimapCheck = CreateCheck(frame, "CCPKeybindDisplayMinimapVisible", "Minimap button", 190, -382)
+    self.visibleCheck = CreateCheck(frame, "CCPKeybindDisplayVisible", "HUD visible", 34, -300)
+    self.visibleCheck:SetScript("OnClick", function() Addon:SetVisible(this:GetChecked() and true or false) end)
+    self.lockedCheck = CreateCheck(frame, "CCPKeybindDisplayLocked", "Lock HUD", 190, -300)
+    self.lockedCheck:SetScript("OnClick", function() Addon:SetLocked(this:GetChecked() and true or false) end)
+    self.backgroundCheck = CreateCheck(frame, "CCPKeybindDisplayBackground", "Card background", 34, -328)
+    self.backgroundCheck:SetScript("OnClick", function() Addon:SetVisualOption("background", this:GetChecked() and true or false) end)
+    self.minimapCheck = CreateCheck(frame, "CCPKeybindDisplayMinimapVisible", "Minimap button", 190, -328)
     self.minimapCheck.label:SetWidth(145)
-    self.minimapCheck:SetScript("OnClick", function() Addon:SetMinimapVisible(this:GetChecked()) end)
-    self.assignedOnlyButton = CreateButton(frame, "CCPKeybindDisplayAssignedOnly", "List: All bindings", 34, -418, 150)
+    self.minimapCheck:SetScript("OnClick", function() Addon:SetMinimapVisible(this:GetChecked() and true or false) end)
+    self.assignedOnlyButton = CreateButton(frame, "CCPKeybindDisplayAssignedOnly", "List: All bindings", 34, -364, 150)
     self.assignedOnlyButton:SetScript("OnClick", function() Addon:ToggleAssignedOnlyList() end)
-    local fixedColumns = CreateLabel(frame, "HUD layout: command | key", 194, -424, 150, 10)
+    local fixedColumns = CreateLabel(frame, "HUD layout: command | key", 194, -370, 150, 10)
     fixedColumns:SetTextColor(0.62, 0.72, 0.84)
 
-    local appearanceTitle = CreateLabel(frame, "APPEARANCE", 34, -462, 220, 11)
+    local appearanceTitle = CreateLabel(frame, "APPEARANCE", 34, -410, 220, 11)
     appearanceTitle:SetTextColor(1, 0.82, 0)
     self.sliders = {}
-    self.sliders.alpha = CreateSlider(frame, "CCPKeybindDisplayAlpha", "Opacity", "alpha", 34, -486, 0.1, 1, 0.05)
-    self.sliders.scale = CreateSlider(frame, "CCPKeybindDisplayScale", "Scale", "scale", 194, -486, 0.5, 2, 0.05)
-    self.sliders.fontSize = CreateSlider(frame, "CCPKeybindDisplayFont", "Font size", "fontSize", 34, -530, 8, 24, 1)
-    self.sliders.width = CreateSlider(frame, "CCPKeybindDisplayWidth", "Preferred width", "width", 194, -530, 320, 800, 10)
-    self.sliders.rowSpacing = CreateSlider(frame, "CCPKeybindDisplaySpacing", "Row spacing", "rowSpacing", 114, -562, 0, 20, 1)
+    self.sliders.alpha = CreateSlider(frame, "CCPKeybindDisplayAlpha", "Opacity", "alpha", 34, -434, 0.1, 1, 0.05)
+    self.sliders.scale = CreateSlider(frame, "CCPKeybindDisplayScale", "Scale", "scale", 194, -434, 0.5, 2, 0.05)
+    self.sliders.fontSize = CreateSlider(frame, "CCPKeybindDisplayFont", "Font size", "fontSize", 34, -478, 8, 24, 1)
+    self.sliders.rowSpacing = CreateSlider(frame, "CCPKeybindDisplaySpacing", "Row spacing", "rowSpacing", 194, -478, 0, 20, 1)
 
     local entriesTitle = CreateLabel(frame, "INDIVIDUAL BINDINGS", 396, -90, 260, 11)
     entriesTitle:SetTextColor(1, 0.82, 0)
@@ -452,7 +466,7 @@ function Addon:CreateOptions()
         row.check:SetHeight(22)
         row.check:SetPoint("TOPLEFT", frame, "TOPLEFT", 394, y)
         row.check:SetScript("OnClick", function()
-            Addon:SetEntryOverride(this._ckdAction, this:GetChecked())
+            Addon:SetEntryTracked(this._ckdAction, this:GetChecked() and true or false)
             Addon:UpdateDisplay()
             Addon:RefreshOptions()
         end)

@@ -2,7 +2,7 @@
 ## Title: CCP Keybind Display
 ## Notes: Compact keybind display and editor for Companion Control Panel.
 ## Author: Shirina
-## Version: 0.3.0
+## Version: 0.3.1
 ## Dependencies: CCP
 ## SavedVariables: CCPKeybindDisplayDB
 

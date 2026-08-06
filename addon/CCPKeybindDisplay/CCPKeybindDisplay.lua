@@ -3,8 +3,6 @@
 
 CCPKeybindDisplay = CCPKeybindDisplay or {}
 local Addon = CCPKeybindDisplay
-local MIN_WIDTH = 320
-local MAX_WIDTH = 800
 local MIN_AUTO_WIDTH = 220
 local OVERLAY_PADDING = 6
 local KEY_WIDTH = 88
@@ -39,7 +37,6 @@ local DEFAULT_VISUAL = {
     relativePoint = "CENTER",
     x = 0,
     y = 0,
-    width = 360,
     alpha = 0.78,
     scale = 1,
     fontSize = 10,
@@ -155,10 +152,8 @@ function Addon:InitializeDatabase()
     end
     CopyDefaults(self.db.visual, DEFAULT_VISUAL)
     local visual = self.db.visual
-    if previousSchema < 4 then
-        visual.width = DEFAULT_VISUAL.width
-        visual.columns = FIXED_COLUMNS
-    end
+    if previousSchema < 4 then visual.columns = FIXED_COLUMNS end
+    visual.width = nil
     if type(visual.visible) ~= "boolean" then visual.visible = DEFAULT_VISUAL.visible end
     if type(visual.locked) ~= "boolean" then visual.locked = DEFAULT_VISUAL.locked end
     if type(visual.background) ~= "boolean" then visual.background = DEFAULT_VISUAL.background end
@@ -166,7 +161,6 @@ function Addon:InitializeDatabase()
     if not VALID_POINTS[visual.relativePoint] then visual.relativePoint = DEFAULT_VISUAL.relativePoint end
     if type(visual.x) ~= "number" then visual.x = DEFAULT_VISUAL.x end
     if type(visual.y) ~= "number" then visual.y = DEFAULT_VISUAL.y end
-    if type(visual.width) ~= "number" or visual.width < MIN_WIDTH or visual.width > MAX_WIDTH then visual.width = DEFAULT_VISUAL.width end
     if type(visual.alpha) ~= "number" or visual.alpha < 0.1 or visual.alpha > 1 then visual.alpha = DEFAULT_VISUAL.alpha end
     if type(visual.scale) ~= "number" or visual.scale < 0.5 or visual.scale > 2 then visual.scale = DEFAULT_VISUAL.scale end
     if type(visual.fontSize) ~= "number" or visual.fontSize < 8 or visual.fontSize > 24 then visual.fontSize = DEFAULT_VISUAL.fontSize end
@@ -178,7 +172,7 @@ function Addon:InitializeDatabase()
     if type(self.db.minimap.angle) ~= "number" or self.db.minimap.angle < 0 or self.db.minimap.angle >= 360 then
         self.db.minimap.angle = DEFAULT_MINIMAP.angle
     end
-    self.db.schemaVersion = 4
+    self.db.schemaVersion = 5
 end
 
 function Addon:DiscoverBindings()
@@ -228,6 +222,14 @@ end
 
 function Addon:SetEntryOverride(action, enabled)
     self.db.overrides[action] = enabled and true or false
+end
+
+function Addon:SetEntryTracked(action, enabled)
+    enabled = enabled and true or false
+    if not enabled and self.db.showAllAssigned then
+        self.db.showAllAssigned = false
+    end
+    self:SetEntryOverride(action, enabled)
 end
 
 function Addon:ClearEntryOverride(action)
@@ -311,7 +313,7 @@ function Addon:CreateOverlay()
     end
     local visual = self.db.visual
     local frame = CreateFrame("Frame", "CCPKeybindDisplayOverlay", UIParent)
-    frame:SetWidth(visual.width)
+    frame:SetWidth(MIN_AUTO_WIDTH)
     frame:SetHeight(40)
     frame:SetPoint(visual.point, UIParent, visual.relativePoint, visual.x, visual.y)
     frame:SetBackdrop({
@@ -408,8 +410,6 @@ function Addon:SetVisualOption(option, value)
         valid = true
     elseif option == "fontSize" and type(value) == "number" and value >= 8 and value <= 24 then
         valid = true
-    elseif option == "width" and type(value) == "number" and value >= MIN_WIDTH and value <= MAX_WIDTH then
-        valid = true
     elseif option == "columns" and value == FIXED_COLUMNS then
         valid = true
     elseif option == "rowSpacing" and type(value) == "number" and value >= 0 and value <= 20 then
@@ -422,7 +422,6 @@ function Addon:SetVisualOption(option, value)
     end
     self.db.visual[option] = value
     if self.overlay then
-        self.overlay:SetWidth(self.db.visual.width)
         self.overlay:SetAlpha(self.db.visual.alpha)
         self.overlay:SetScale(self.db.visual.scale)
         if self.db.visual.background then
@@ -452,7 +451,6 @@ function Addon:UpdateDisplay()
         rowsPerColumn = math.floor((count + columns - 1) / columns)
     end
     local rowHeight = self.db.visual.fontSize + self.db.visual.rowSpacing + 2
-    local maximumCardWidth = self.db.visual.width
     local scaledLabelLimit = math.floor((MAX_LABEL_WIDTH * self.db.visual.fontSize / 10) + 0.5)
     local maxLabelWidth = 1
     local maxKeyWidth = KEY_WIDTH
@@ -470,8 +468,7 @@ function Addon:UpdateDisplay()
         measuredWidth = row.keys:GetStringWidth()
         if measuredWidth and measuredWidth > maxKeyWidth then maxKeyWidth = measuredWidth end
     end
-    local availableLabelWidth = maximumCardWidth - (OVERLAY_PADDING * 2) - KEY_GAP - maxKeyWidth
-    maxLabelWidth = math.min(maxLabelWidth, scaledLabelLimit, math.max(80, availableLabelWidth))
+    maxLabelWidth = math.min(maxLabelWidth, scaledLabelLimit)
     local requiredColumnWidth = (OVERLAY_PADDING * 2) + maxLabelWidth + KEY_GAP + maxKeyWidth
     local columnWidth = math.max(MIN_AUTO_WIDTH, requiredColumnWidth)
     local overlayWidth = columnWidth * columns
