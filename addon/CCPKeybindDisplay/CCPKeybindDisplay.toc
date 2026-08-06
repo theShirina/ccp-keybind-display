@@ -1,0 +1,10 @@
+## Interface: 11200
+## Title: CCP Keybind Display
+## Notes: Compact keybind display and editor for Companion Control Panel.
+## Author: Shirina
+## Version: 0.3.0
+## Dependencies: CCP
+## SavedVariables: CCPKeybindDisplayDB
+
+CCPKeybindDisplay.lua
+CCPKeybindDisplayOptions.lua

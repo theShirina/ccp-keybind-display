@@ -1,0 +1,86 @@
+# CCP Keybind Display
+
+A keybind display and editor for Companion Control Panel (CCP), made for Microbot's World of Warcraft 1.12.1 client.
+
+The addon reads CCP commands directly from WoW's binding list, so it can pick up new commands without an update. It does not replace or modify CCP.
+
+## Requirements
+
+- Microbot's World of Warcraft 1.12.1 client (`## Interface: 11200`)
+- Microbot's Companion Control Panel (CCP) installed and enabled
+
+## Before installing
+
+This was built and tested for Microbot. It is not intended for other clients or private servers.
+
+## Installation
+
+1. Download [`CCPKeybindDisplay-0.3.0.zip`](https://github.com/theShirina/ccp-keybind-display/releases/download/v0.3.0/CCPKeybindDisplay-0.3.0.zip).
+2. Close World of Warcraft.
+3. Extract the ZIP into your WoW `Interface\AddOns` folder.
+4. Check that this path exists:
+
+   ```text
+   Interface\AddOns\CCPKeybindDisplay\CCPKeybindDisplay.toc
+   ```
+
+5. Start WoW and enable **CCP Keybind Display** on the AddOns screen.
+
+If the addon does not appear, check for an extra nested folder such as `CCPKeybindDisplay\CCPKeybindDisplay\`.
+
+### Updating
+
+Close WoW and replace the existing `Interface\AddOns\CCPKeybindDisplay` folder with the folder from the new ZIP. Account-wide settings remain in WoW's SavedVariables.
+
+## Use
+
+Type `/ckd` or click the minimap key icon to open settings.
+
+The overlay shows one compact command column beside one keybind column. Its width follows the current text and font size. **Preferred width** limits ordinary layouts, but the card can grow when a long key value would otherwise be cut off. The scale setting controls the final on-screen size.
+
+Settings include:
+
+- role and per-command visibility;
+- persistent **Show all assigned** mode;
+- opacity, scale, font size, preferred width, and row spacing;
+- background, lock, display, and minimap-button controls;
+- an assigned-only settings filter;
+- a built-in keybind manager with conflict confirmation.
+
+The keybind manager saves accepted changes to WoW's active binding set. Replacing a command's bindings opens a confirmation, and any conflict names the action that will lose its key. **Clear all** is a separate button that removes both key slots.
+
+### Commands
+
+```text
+/ckd              Open settings
+/ckd show         Show the overlay
+/ckd hide         Hide the overlay
+/ckd lock         Lock the overlay
+/ckd unlock       Unlock the overlay
+/ckd minimap      Toggle the minimap button
+/ckd refresh      Rediscover bindings
+/ckd reset        Restore addon defaults
+```
+
+## How it works
+
+CCP Keybind Display reads commands through `GetNumBindings()` and `GetBinding()`. It includes actions named `CCP_*` and CCP's `CP` show/hide action. Role suffixes place commands into General, Tank, Healer, Tank + Healer, DPS, Melee DPS, or Ranged DPS.
+
+The addon has no network code, analytics, advertisements, or external services. It stores account-wide preferences only in `CCPKeybindDisplayDB`.
+
+## Building and testing
+
+The release ZIP is deterministic and contains only the addon folder.
+
+```text
+python tests/validate.py --lua <path-to-lua-5.0.3> --luac <path-to-luac-5.0.3>
+python scripts/build_release.py
+```
+
+The validator checks Lua 5.0 syntax, `_G == nil` behavior, dynamic discovery, SavedVariables migration, layout geometry, binding transactions, release contents, and LF/CRLF reproducibility.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
+
+## License
+
+[MIT](LICENSE). Companion Control Panel and World of Warcraft are separate projects and are not included in this repository.
