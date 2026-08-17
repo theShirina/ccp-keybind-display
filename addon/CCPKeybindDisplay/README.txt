@@ -1,11 +1,11 @@
 CCP Keybind Display 0.3.1
 
 Requirements
-- Microbot's World of Warcraft 1.12.1 client (Interface 11200)
-- Microbot's Companion Control Panel (CCP) installed and enabled
+- WoW 1.12 client (Interface 11200)
+- WoW's Companion Control Panel (CCP) installed and enabled
 
 Compatibility
-This addon is made and tested for Microbot. Other clients and private servers are not supported.
+This addon is made and tested for WoW. Other compatible WoW 1.12 clients may work but are not tested here.
 
 Installation
 1. Close World of Warcraft.

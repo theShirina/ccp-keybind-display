@@ -1,17 +1,17 @@
 # CCP Keybind Display
 
-A keybind display and editor for Companion Control Panel (CCP), made for Microbot's World of Warcraft 1.12.1 client.
+A keybind display and editor for Companion Control Panel (CCP), made for WoW 1.12 client.
 
 The addon reads CCP commands directly from WoW's binding list, so it can pick up new commands without an update. It does not replace or modify CCP.
 
 ## Requirements
 
-- Microbot's World of Warcraft 1.12.1 client (`## Interface: 11200`)
-- Microbot's Companion Control Panel (CCP) installed and enabled
+- WoW 1.12 client (`## Interface: 11200`)
+- WoW's Companion Control Panel (CCP) installed and enabled
 
 ## Before installing
 
-This was built and tested for Microbot. It is not intended for other clients or private servers.
+This was built and tested for WoW. It is intended for compatible WoW 1.12 clients.
 
 ## Installation
 
