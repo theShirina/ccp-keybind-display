@@ -1,4 +1,5 @@
-# Changelog
+# CCP Keybind Display change log
+
 
 ## 0.3.1 — 2026-08-06
 
