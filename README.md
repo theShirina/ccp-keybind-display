@@ -11,7 +11,7 @@ The addon reads CCP commands directly from WoW's binding list, so it can pick up
 
 ## Before installing
 
-This was built and tested for WoW. It is intended for compatible WoW 1.12 clients.
+This addon is for compatible WoW 1.12 clients.
 
 ## Installation
 
