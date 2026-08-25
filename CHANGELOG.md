@@ -1,6 +1,5 @@
 # CCP Keybind Display change log
 
-
 ## 0.3.1 — 2026-08-06
 
 - Individual binding checkboxes now work after Show All Assigned has been enabled.
