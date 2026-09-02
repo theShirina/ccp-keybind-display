@@ -32,6 +32,21 @@ If the addon does not appear, check for an extra nested folder such as `CCPKeybi
 
 Close WoW and replace the existing `Interface\AddOns\CCPKeybindDisplay` folder with the folder from the new ZIP. Account-wide settings remain in WoW's SavedVariables.
 
+## What's new
+
+### 0.3.1
+
+- Filter the settings list by role without changing which commands appear on the HUD.
+- Control each HUD binding after **Show all assigned** has been enabled.
+- The HUD now sizes itself to the current text and font size; the **Preferred width** control has been removed.
+- Background and HUD visibility controls now work with WoW 1.12 checkbox values.
+
+### 0.3.0
+
+- First public release with a compact command and keybind display.
+- Persistent **Show all assigned** mode, role filters, and per-command visibility controls.
+- Built-in keybind manager with conflict confirmation, plus a movable minimap button and settings window.
+
 ## Use
 
 Type `/ckd` or click the minimap key icon to open settings.
